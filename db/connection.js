@@ -1,4 +1,3 @@
-// import mysql2
 const mysql = require('mysql2');
 
 // connect to database 
