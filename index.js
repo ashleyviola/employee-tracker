@@ -54,11 +54,13 @@ const promptUser = () => {
                 console.log('Add an Employee Selected');
                 addEmployee();
             }
-            if (choices === 'Update Employee'){
-                console.log('Update Employee Selected');
-            }
+            if (choices === 'Update Employee Role'){
+                console.log('Update Employee Role Selected');
+                updateRole();
+            }   
             if (choices === 'Update Manager'){
                 console.log('View All Roles Selected');
+                updateManager();
             }
             if (choices === 'View Employees by Manager'){
                 console.log('View Employees by Manager Selected');
@@ -90,6 +92,7 @@ viewDepartments = () => {
            Departments 
     ==========================
     `);
+    // retrieve department information
     const sql = `SELECT departments.id AS id,
                 departments.name as department 
                 FROM departments`;
@@ -106,6 +109,7 @@ viewRoles = () => {
               Roles 
     ==========================
     `);
+    // retrieve roles & departments information 
     const sql = `SELECT roles.title AS job_title, roles.id AS id, departments.name AS department, roles.salary AS salary
                 FROM roles
                 INNER JOIN departments ON roles.department_id=departments.id`;
@@ -335,10 +339,128 @@ addEmployee = () => {
         })
     })
 }
-// update employee 
-
-// up manager 
-
+// update role 
+updateRole = () => {
+    console.log(`
+    ==========================
+           Update Role
+    ==========================
+    `);
+    // get employee list from database 
+    const sql = `SELECT * FROM employees`;
+    db.query(sql, (err, res) => {
+        if(err) throw(err);
+        const employeeChoice = [];
+        res.forEach(({first_name, last_name, id}) => {
+            employeeChoice.push({
+                name: first_name + ' ' + last_name,
+                value: id
+            });
+        });
+        // get role list to make choice of employees role
+        const sql = `SELECT * FROM roles`;
+        db.query(sql, (err, res) => {
+            const roleChoice = [];
+            res.forEach(({title, id}) => {
+                roleChoice.push({
+                    name: title,
+                    value: id
+                });
+            });
+        return inquirer
+            .prompt([
+                {
+                    type: 'list',
+                    name: 'employee',
+                    message: 'Which employee do you want to update?',
+                    choices: employeeChoice
+                },
+                {
+                    type: 'list',
+                    name: 'role',
+                    message: "What is the employee's new role?",
+                    choices: roleChoice
+                }
+            ])
+            .then(answers => {
+                const sql = `UPDATE employees
+                            SET ?
+                            WHERE ?? = ?`;
+                const params = [{role_id: answers.role}, "id", answers.employee];
+                db.query(sql, params, (err, res) => {
+                    if(err) throw err;
+                    console.log("Successfully updated employee's role.");
+                    promptUser();
+                })
+            })
+        })
+    })
+}
+// update manager 
+updateManager = () => {
+    console.log(`
+    ==========================
+          Update Manager
+    ==========================
+    `);
+    // get employee list 
+    const sql = `SELECT * FROM employees`;
+    db.query(sql, (err, res) => {
+        if(err) throw(err);
+        const employeeChoice = [];
+        res.forEach(({first_name, last_name, id}) => {
+            employeeChoice.push({
+                name: first_name + ' ' + last_name,
+                value: id
+            });
+        });
+        // get manager information to update 
+        const sql = `SELECT * FROM employees`;
+        db.query(sql, (err, res) => {
+            if(err) throw err;
+            // pull in choices for managers
+            const managerChoice = [
+                {
+                    name: 'None',
+                    value: 0
+                }
+            ];
+            res.forEach(({first_name, last_name, id}) =>{
+                managerChoice.push({
+                    name: first_name + " " + last_name,
+                    value: id
+                });
+            });
+            return inquirer
+            .prompt([
+                {
+                    type: 'list',
+                    name: 'employee',
+                    message: 'Which employee do you want to update?',
+                    choices: employeeChoice
+                },
+                {
+                    type: 'list',
+                    name: 'manager_id',
+                    message: "Who is the employee's new manager?",
+                    choices: managerChoice
+                }
+            ])
+            .then(answers => {
+                const sql = `UPDATE employees
+                            SET ?
+                            WHERE id = ?`;
+                let manager_id = answers.manager_id !== 0? answers.manager_id: null;
+                const params = [{manager_id: manager_id}, answers.employee];
+                db.query(sql, params, (err, res) => {
+                    if(err) throw err;
+                    console.log("Successfully updated employee's role.");
+                    promptUser();
+                });
+            })
+        });
+    }); 
+}
 // view employees by manager 
 
 // view employees by department 
