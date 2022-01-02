@@ -88,10 +88,29 @@ const promptUser = () => {
                 viewBudget();
             }
         })
-}
+};
 
-// exit or continue function 
-
+// complete another action
+const nextSearch = () => {
+    console.log(`
+    ==========================
+    `)
+    return inquirer
+        .prompt([
+            {
+                type: 'confirm',
+                name: 'moreQuery',
+                message: 'Do you want to do anything else?'
+            }
+        ])
+        .then((answer) => {
+            if(answer.moreQuery){
+                return promptUser(); 
+            } else {
+                console.log('Exit Inquirer to end session.')
+            }
+        });
+};
 // view all departments 
 viewDepartments = () => {
     console.log(`
@@ -106,8 +125,8 @@ viewDepartments = () => {
     db.query(sql, (err, rows) => {
         if(err) throw err;
         console.table(rows);
+        nextSearch();
     });
-    promptUser();
 };
 // view all roles 
 viewRoles = () => {
@@ -123,8 +142,8 @@ viewRoles = () => {
     db.query(sql, (err, rows) => {
         if(err) throw err;
         console.table(rows);
+        nextSearch();
     });
-    promptUser();
 };
 // view all employees 
 viewEmployees = () => {
@@ -148,8 +167,8 @@ viewEmployees = () => {
     db.query(sql, (err, rows) => {
         if(err) throw err;
         console.table(rows);
+        nextSearch();
     });
-    promptUser();
 };
 // add a department 
 addDepartment = () => {
@@ -181,7 +200,7 @@ addDepartment = () => {
             db.query(sql, params, (err, result) => {
                 if(err) throw err;
                 console.log('Successfully added' + answer.addDepartment + ".");
-                promptUser();
+                nextSearch();
         });
     });
 };
@@ -248,7 +267,7 @@ addRole = () => {
             db.query(sql, params, (err, result) => {
                 if(err) throw err;
                 console.log('Successfully added ' + answers.roleTitle +'.');
-                promptUser();
+                nextSearch();
             })
        })
    });  
@@ -340,12 +359,12 @@ addEmployee = () => {
                 db.query(sql, params, (err, res) => {
                     if(err) throw err;
                     console.log('Successfully added ' + answers.first_name +' ' + answers.last_name + '.');
-                promptUser();
-                })
-            }) 
-        })
-    })
-}
+                    nextSearch();
+                });
+            }); 
+        });
+    });
+};
 // update role 
 updateRole = () => {
     console.log(`
@@ -397,7 +416,7 @@ updateRole = () => {
                 db.query(sql, params, (err, res) => {
                     if(err) throw err;
                     console.log("Successfully updated employee's role.");
-                    promptUser();
+                    nextSearch();
                 })
             })
         })
@@ -462,7 +481,7 @@ updateManager = () => {
                 db.query(sql, params, (err, res) => {
                     if(err) throw err;
                     console.log("Successfully updated employee's role.");
-                    promptUser();
+                    nextSearch();
                 });
             })
         });
@@ -537,11 +556,11 @@ viewByManager = () => {
                 db.query(sql, params, (err, res) => {
                     if(err) throw(err);
                     console.table(res);
-                })
-                promptUser();
-            })
+                    nextSearch();
+                });
+            });
             
-    })
+    });
 };
 // view employees by department 
 viewByDepartment = () => {
@@ -585,8 +604,8 @@ viewByDepartment = () => {
                 db.query(sql, params, (err, res) => {
                     if(err) throw err;
                     console.table(res);
+                    nextSearch();
                 });
-                promptUser();
             });
     });
 };
@@ -622,9 +641,9 @@ deleteDepartment = () => {
                 const params = [answers.department_id];
                 db.query(sql, params, (err, res) => {
                     if(err) throw (err);
-                    console.log("Successfully deleted selected department.")
+                    console.log("Successfully deleted selected department.");
+                    nextSearch();
                 });
-                promptUser();
             });
     });
 };
@@ -661,8 +680,8 @@ deleteRoles = () => {
                 db.query(sql, params, (err, res) => {
                     if(err) throw err;
                     console.log("Successfully deleted selected role.")
+                    nextSearch();
                 });
-                promptUser();
             });
     });
 };   
@@ -699,8 +718,8 @@ deleteEmployee = () => {
                 db.query(sql, params, (err, res) => {
                     if(err) throw err;
                     console.log("Successfully deleted selected employee.")
+                    nextSearch();
                 });
-                promptUser();
             });
     });
 };   
@@ -743,6 +762,7 @@ viewBudget = () => {
                 db.query(sql, params, (err, res) => {
                     if(err) throw err;
                     console.table(res);
+                    nextSearch();
                 });
             });
     });
