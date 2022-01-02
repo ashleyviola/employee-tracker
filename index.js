@@ -69,6 +69,7 @@ const promptUser = () => {
             }
             if (choices === 'View Employees by Department'){
                 console.log('View Employees by Department Selected');
+                viewByDepartment();
             }
             if (choices === 'Delete Department'){
                 console.log('Delete Department Selected');
@@ -540,7 +541,52 @@ viewByManager = () => {
 };
 
 // view employees by department 
-
+viewByDepartment = () => {
+    console.log(`
+    ==========================
+        View By Department
+    ==========================
+    `);
+    const sql = `SELECT * FROM departments`;
+    db.query(sql, (err, res) => {
+        if(err) throw err;
+        const departmentList = [];
+        res.forEach(({name, id}) => {
+            departmentList.push({
+                name: name,
+                value: id
+            });
+        });
+        return inquirer
+            .prompt([
+                {
+                    type: 'list',
+                    name: 'department_id',
+                    message: "Select a department to view it's employees.",
+                    choices: departmentList
+                }
+            ])
+            .then(answers => {
+                const sql = `
+                    SELECT
+                    employees.id AS employee_id,
+                    employees.first_name,
+                    employees.last_name,
+                    roles.title AS job_title,
+                    departments.name AS department
+                    FROM employees
+                    INNER JOIN roles ON employees.role_id=roles.id
+                    INNER JOIN departments ON roles.department_id=departments.id
+                    WHERE department_id= ?`; 
+                const params = [answers.department_id];
+                db.query(sql, params, (err, res) => {
+                    if(err) throw err;
+                    console.table(res);
+                });
+                promptUser();
+            });
+    });
+};
 // delete departments
 
 // delete roles 
