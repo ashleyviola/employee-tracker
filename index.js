@@ -2,6 +2,7 @@
 const inquirer = require('inquirer');
 const cTable = require('console.table');
 const db = require('./db/connection');
+const { listenerCount } = require('./db/connection');
 
 db.connect(err => {
     if(err) throw err;
@@ -23,7 +24,7 @@ const promptUser = () => {
                 name: 'choices',
                 message: 'What would you like do to?',
                 choices: ['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 
-                'Add a Role', 'Add an Employee', 'Update Employee', 'Update Manager', 'View Employees by Manager',
+                'Add a Role', 'Add an Employee', 'Update Employee Role', 'Update Manager', 'View Employees by Manager',
                 'View Employees by Department', 'Delete Department', 'Delete Role', 'Delete Employee', 'View Department Budget Utilization']
             }
         ])
@@ -64,6 +65,7 @@ const promptUser = () => {
             }
             if (choices === 'View Employees by Manager'){
                 console.log('View Employees by Manager Selected');
+                viewByManager();
             }
             if (choices === 'View Employees by Department'){
                 console.log('View Employees by Department Selected');
@@ -462,6 +464,80 @@ updateManager = () => {
     }); 
 }
 // view employees by manager 
+viewByManager = () => {
+    console.log(`
+    ==========================
+          View By Manager
+    ==========================
+    `);
+    const sql = `SELECT * FROM employees`;
+    db.query(sql, (err, res) => {
+        if(err) throw err;
+        const employeeChoice = [
+            {
+                name: 'None',
+                value: 0
+            }
+        ];
+        res.forEach(({first_name, last_name, id}) => {
+            employeeChoice.push({
+                name: first_name + " " + last_name,
+                value: id
+            });
+        });
+        return inquirer
+            .prompt([
+                {
+                    type: 'list',
+                    name: 'manager_id',
+                    message: "Which manager's employees do you want to view?",
+                    choices: employeeChoice
+                },
+            ])
+            .then(answers => {
+                let manager_id, sql;
+                if(answers.manager_id){
+                    sql = `
+                        SELECT
+                        employees.id AS employee_id,
+                        employees.first_name,
+                        employees.last_name,
+                        roles.title AS job_title,
+                        departments.name AS department,
+                        roles.salary AS salary,
+                        CONCAT(manager.first_name, " ", manager.last_name) AS manager
+                        FROM employees
+                        INNER JOIN roles ON employees.role_id=roles.id
+                        INNER JOIN departments ON roles.department_id=departments.id
+                        LEFT JOIN employees manager ON employees.manager_id=manager.id
+                        WHERE employees.manager_id = ?`;
+                } else {
+                        manager_id = null;
+                        sql = `
+                        SELECT
+                        employees.id AS employee_id,
+                        employees.first_name,
+                        employees.last_name,
+                        roles.title AS job_title,
+                        departments.name AS department,
+                        roles.salary AS salary,
+                        CONCAT(manager.first_name, " ", manager.last_name) AS manager
+                        FROM employees
+                        INNER JOIN roles ON employees.role_id=roles.id
+                        INNER JOIN departments ON roles.department_id=departments.id
+                        LEFT JOIN employees manager ON employees.manager_id=manager.id
+                        WHERE employees.manager_id = null`;
+                }
+                const params = [answers.manager_id];
+                db.query(sql, params, (err, res) => {
+                    if(err) throw(err);
+                    console.table(res);
+                })
+                promptUser();
+            })
+            
+    })
+};
 
 // view employees by department 
 
