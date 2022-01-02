@@ -73,15 +73,19 @@ const promptUser = () => {
             }
             if (choices === 'Delete Department'){
                 console.log('Delete Department Selected');
+                deleteDepartment();
             }
             if (choices === 'Delete Role'){
                 console.log('Delete Role Selected');
+                deleteRoles();
             }
             if (choices === 'Delete Employee'){
                 console.log('Delete Employee Selected');
+                deleteEmployee();
             }
             if (choices === 'View Department Budget Utilization'){
                 console.log('View Department Budget Utilization Selected');
+                viewBudget();
             }
         })
 }
@@ -539,7 +543,6 @@ viewByManager = () => {
             
     })
 };
-
 // view employees by department 
 viewByDepartment = () => {
     console.log(`
@@ -588,9 +591,159 @@ viewByDepartment = () => {
     });
 };
 // delete departments
-
+deleteDepartment = () => {
+    console.log(`
+    ==========================
+        Delete Department
+    ==========================
+    `);
+    const sql = `SELECT * FROM departments`;
+    db.query(sql, (err, res) => {
+        if(err) throw err;
+        const departmentList = [];
+        res.forEach(({name, id}) => {
+            departmentList.push({
+                name: name,
+                value: id
+            });
+        });
+        return inquirer
+            .prompt([
+                {
+                    type: 'list',
+                    name: 'department_id',
+                    message: 'Select a department to delete.',
+                    choices: departmentList
+                }
+            ])
+            .then(answers => {
+                const sql = `DELETE FROM departments
+                            WHERE id=?`;
+                const params = [answers.department_id];
+                db.query(sql, params, (err, res) => {
+                    if(err) throw (err);
+                    console.log("Successfully deleted selected department.")
+                });
+                promptUser();
+            });
+    });
+};
 // delete roles 
-
+deleteRoles = () => {
+    console.log(`
+    ==========================
+           Delete Roles
+    ==========================
+    `);
+    const sql = `SELECT * FROM roles`;
+    db.query(sql, (err, res) => {
+        if(err) throw err;
+        const roleList = [];
+        res.forEach(({title, id}) => {
+            roleList.push({
+                name: title,
+                value: id
+            });
+        });
+        return inquirer
+            .prompt([
+                {
+                    type: 'list',
+                    name: 'role_id',
+                    message: 'Select the role to delete.',
+                    choices: roleList
+                }
+            ])
+            .then(answers => {
+                const sql = `DELETE FROM roles
+                            WHERE id = ?`;
+                const params = [answers.role_id];
+                db.query(sql, params, (err, res) => {
+                    if(err) throw err;
+                    console.log("Successfully deleted selected role.")
+                });
+                promptUser();
+            });
+    });
+};   
 // delete employees 
-
+deleteEmployee = () => {
+    console.log(`
+    ==========================
+          Delete Employee
+    ==========================
+    `);
+    const sql = `SELECT * FROM employees`;
+    db.query(sql, (err, res) => {
+        if(err) throw err;
+        const employeeList = [];
+        res.forEach(({first_name, last_name, id}) => {
+            employeeList.push({
+                name: first_name +' '+last_name,
+                value: id
+            });
+        });
+        return inquirer
+            .prompt([
+                {
+                    type: 'list',
+                    name: 'employee_id',
+                    message: 'Select the employee to delete.',
+                    choices: employeeList
+                }
+            ])
+            .then(answers => {
+                const sql = `DELETE FROM employees
+                            WHERE id = ?`;
+                const params = [answers.employee_id];
+                db.query(sql, params, (err, res) => {
+                    if(err) throw err;
+                    console.log("Successfully deleted selected employee.")
+                });
+                promptUser();
+            });
+    });
+};   
 // view budget
+viewBudget = () => {
+    console.log(`
+    ==========================
+            View Budget
+    ==========================
+    `);
+    const sql = `SELECT * FROM departments`;
+    db.query(sql, (err, res) => {
+        if(err) throw err;
+        const departmentList = [];
+        res.forEach(({name, id}) => {
+            departmentList.push({
+                name: name,
+                value: id
+            });
+        });
+        return inquirer
+            .prompt([
+                {
+                    type: 'list',
+                    name: 'department_id',
+                    message: "Select the department's budget to view.",
+                    choices: departmentList
+                }
+            ])
+            .then(answers => {
+                const sql = `
+                            SELECT 
+                            name AS department,
+                            SUM(salary) AS budget
+                            FROM employees
+                            INNER JOIN roles ON employees.role_id=roles.id
+                            INNER JOIN departments ON roles.department_id=departments.id
+                            WHERE departments.id= ?`; 
+                const params = [answers.department_id];
+                db.query(sql, params, (err, res) => {
+                    if(err) throw err;
+                    console.table(res);
+                });
+            });
+    });
+};
